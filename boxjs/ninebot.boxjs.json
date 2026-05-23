@@ -1,0 +1,159 @@
+{
+  "id": "KAHIK.NineSync",
+  "name": "NineBot-DATA",
+  "author": "@KAHIK",
+  "description": "九号电动车自动签到数据存储",
+  "icon": "",
+  "repo": "https://github.com/KAHIK-7/NineSync-AutoPunch",
+  "updateUrl": "https://raw.githubusercontent.com/KAHIK-7/NineSync-AutoPunch/main/boxjs/ninebot.boxjs.json",
+  "apps": [
+    {
+      "id": "DataCollection.Ninebot",
+      "name": "九号签到数据",
+      "descs_html": [
+        "用于保存九号电动车 App 抓取到的 <code>Authorization</code>、<code>DeviceId</code> 等核心凭证。",
+        "<b>凭证获取：</b><br/>1）安装 Loon 插件并开启自动抓包；<br/>2）打开九号出行 App，进入签到页面；<br/>3）脚本自动提取凭证写入以下字段。"
+      ],
+      "icons": [],
+      "keys": [
+        "#ComponentService",
+        "ninebot.authorization",
+        "ninebot.deviceId",
+        "ninebot.userAgent",
+        "ninebot.titlePrefix",
+        "ninebot.notify",
+        "ninebot.autoOpenBox",
+        "ninebot.autoRepairCard",
+        "ninebot.notifyFail",
+        "ninebot.logLevel",
+        "ninebot.lastCaptureAt",
+        "ninebot.lastSignDate",
+        "ninebot.enableRetry"
+      ],
+      "settings": [
+        {
+          "id": "ninebot.authorization",
+          "name": "Authorization",
+          "val": "",
+          "type": "text",
+          "isSecret": true,
+          "desc": "自动抓包写入，请勿手动修改"
+        },
+        {
+          "id": "ninebot.deviceId",
+          "name": "DeviceId",
+          "val": "",
+          "type": "text",
+          "isSecret": true,
+          "desc": "自动抓包写入，请勿手动修改"
+        },
+        {
+          "id": "ninebot.userAgent",
+          "name": "User-Agent",
+          "val": "Ninebot/3620 CFNetwork/3860.200.71 Darwin/25.1.0",
+          "type": "text",
+          "desc": "自动抓包更新"
+        },
+        {
+          "id": "ninebot.titlePrefix",
+          "name": "通知标题",
+          "val": "九号签到助手",
+          "type": "text",
+          "desc": "签到通知的标题前缀"
+        },
+        {
+          "id": "ninebot.notify",
+          "name": "签到通知",
+          "val": "true",
+          "type": "select",
+          "items": [
+            { "key": "true", "label": "开启" },
+            { "key": "false", "label": "关闭" }
+          ],
+          "desc": "推送签到结果通知"
+        },
+        {
+          "id": "ninebot.autoOpenBox",
+          "name": "自动盲盒",
+          "val": "false",
+          "type": "select",
+          "items": [
+            { "key": "true", "label": "开启" },
+            { "key": "false", "label": "关闭" }
+          ],
+          "desc": "签到后自动开启可领取的盲盒"
+        },
+        {
+          "id": "ninebot.autoRepairCard",
+          "name": "自动补签",
+          "val": "false",
+          "type": "select",
+          "items": [
+            { "key": "true", "label": "开启" },
+            { "key": "false", "label": "关闭" }
+          ],
+          "desc": "签到失败时自动使用补签卡"
+        },
+        {
+          "id": "ninebot.notifyFail",
+          "name": "失败通知",
+          "val": "true",
+          "type": "select",
+          "items": [
+            { "key": "true", "label": "开启" },
+            { "key": "false", "label": "关闭" }
+          ],
+          "desc": "仅失败时推送通知"
+        },
+        {
+          "id": "ninebot.logLevel",
+          "name": "日志级别",
+          "val": "simple",
+          "type": "select",
+          "items": [
+            { "key": "silent", "label": "静默" },
+            { "key": "simple", "label": "简洁" },
+            { "key": "full", "label": "完整" }
+          ],
+          "desc": "脚本日志输出级别"
+        },
+        {
+          "id": "ninebot.enableRetry",
+          "name": "请求重试",
+          "val": "true",
+          "type": "select",
+          "items": [
+            { "key": "true", "label": "开启" },
+            { "key": "false", "label": "关闭" }
+          ],
+          "desc": "网络异常时自动重试"
+        },
+        {
+          "id": "ninebot.lastCaptureAt",
+          "name": "最后抓包",
+          "val": "",
+          "type": "text",
+          "isReadonly": true,
+          "desc": "凭证最后更新时间"
+        },
+        {
+          "id": "ninebot.lastSignDate",
+          "name": "最后签到",
+          "val": "",
+          "type": "text",
+          "isReadonly": true,
+          "desc": "最后一次签到日期"
+        }
+      ]
+    }
+  ],
+  "rewrite": [
+    {
+      "name": "配置跨域",
+      "author": "@KAHIK",
+      "script": "const res={headers:{...$response.headers,\"Access-Control-Allow-Origin\":\"*\",\"Access-Control-Allow-Methods\":\"GET,OPTIONS\"},body:$response.body};$done(res);",
+      "match": "https://raw.githubusercontent.com/KAHIK-7/NineSync-AutoPunch/main/boxjs/ninebot.boxjs.json",
+      "type": "response"
+    }
+  ]
+}

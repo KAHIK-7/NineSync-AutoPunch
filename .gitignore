@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+__MACOSX/
+._*
+
+# IDE
+.idea/
+.vscode/
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Debug logs
+catlog/
+
+# Reference
+origin/
+scripting/

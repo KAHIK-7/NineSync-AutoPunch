@@ -1,0 +1,26 @@
+#!name = Ninebot Auto Sign
+#!desc = 九号电动车自动签到 — 抓包获取凭证，cron 定时签到，自动盲盒开箱
+#!openUrl = https://github.com/KAHIK-7/NineSync-AutoPunch
+#!author = KAHIK-7
+#!homepage = https://github.com/KAHIK-7/NineSync-AutoPunch
+#!tag = Ninebot-Auto-Sign
+#!system = iOS,iPadOS,macOS
+#!date = 2026-05-25
+#!version = 1.0
+#!system_version = 15
+
+[Argument]
+capture = switch, "false", "true", tag=自动抓包开关, desc=开启后访问九号签到页自动写入鉴权信息
+notify = switch, "true", "false", tag=通知开关, desc=是否推送签到结果通知
+autoOpenBox = switch, "true", "false", tag=自动盲盒开箱, desc=每日自动开启可领取盲盒
+autoRepairCard = switch, "false", "true", tag=自动补签, desc=签到失败时自动使用补签卡
+titlePrefix = input, "九号签到助手", tag=自定义通知标题, desc=签到结果通知的标题前缀
+cron_time = input, "3 0 * * *", tag=签到时间（CRON）, desc=每日自动签到的执行时间
+
+[Script]
+http-response ^https:\/\/cn-cbu-gateway\.ninebot\.com\/portal\/api\/user-sign\/v2\/status script-path=https://raw.githubusercontent.com/KAHIK-7/NineSync-AutoPunch/main/loon/scripts/ninebot-sign.js, timeout=10, tag=九号-抓包写入, enable={capture}, script-update-interval=0
+cron {cron_time} script-path=https://raw.githubusercontent.com/KAHIK-7/NineSync-AutoPunch/main/loon/scripts/ninebot-sign.js, timeout=120, tag=九号-自动签到, enable=true, script-update-interval=0
+http-response ^https:\/\/raw\.githubusercontent\.com\/KAHIK-7\/NineSync-AutoPunch\/main\/boxjs\/ninebot\.boxjs\.json script-path=https://raw.githubusercontent.com/KAHIK-7/NineSync-AutoPunch/main/loon/scripts/boxjs-cors.js, tag=九号-BoxJs跨域, enable=true, script-update-interval=0
+
+[Rewrite]
+https:\/\/raw\.githubusercontent\.com\/KAHIK-7\/NineSync-AutoPunch\/main\/boxjs\/ninebot\.boxjs\.json response-body script-path=https://raw.githubusercontent.com/KAHIK-7/NineSync-AutoPunch/main/loon/scripts/boxjs-cors.js
