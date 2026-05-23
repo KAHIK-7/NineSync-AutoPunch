@@ -1,0 +1,25 @@
+README.md
+  d31d4b4ab3a12a5a 1-98
+.gitignore
+  d31d4b4ab3a12a5a 1-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "1d75db6254d7b7f8d9532b21f9667633d4a75e35",
+  "prompts": {
+    "d31d4b4ab3a12a5a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bd1a4f8d-c339-4d72-b5ff-59b22e32a34b",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "KAHIK-7",
+      "messages": [],
+      "total_additions": 110,
+      "total_deletions": 0,
+      "accepted_lines": 110,
+      "overriden_lines": 0
+    }
+  }
+}
