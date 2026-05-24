@@ -2,17 +2,19 @@ name: Ninebot Auto Sign
 
 on:
   schedule:
-    - cron: "30 0 * * *"   # 每天 00:30 (UTC+8 → 需要对应 UTC 时间调整)
-  workflow_dispatch:        # 手动触发
+    - cron: "30 0 * * *"
+  workflow_dispatch:
 
 jobs:
   sign:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - name: Run sign
         env:
           AUTHORIZATION: ${{ secrets.AUTHORIZATION }}

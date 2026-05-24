@@ -9,6 +9,9 @@
 //   NOTIFY_URL       - Bark 通知 URL，可选 (https://api.day.app/your-key)
 //   USER_AGENT       - 请求 UA，有默认值
 
+const dns = require("node:dns");
+dns.setDefaultResultOrder("ipv4first");
+
 const AUTH = process.env.AUTHORIZATION;
 const DEVICE_ID = process.env.DEVICE_ID;
 const AUTO_OPEN_BOX = process.env.AUTO_OPEN_BOX === "true";
@@ -26,19 +29,23 @@ const END = {
   repairSign:      "https://cn-cbu-gateway.ninebot.com/portal/api/user-sign/v2/repair",
 };
 
-const HEADERS = {
-  "Authorization": AUTH,
-  "Content-Type": "application/json",
-  "device_id": DEVICE_ID,
-  "User-Agent": UA,
-  "platform": "h5",
-  "Origin": "https://h5-bj.ninebot.com",
-  "language": "zh",
-  "aid": "10000004",
-  "accept": "application/json",
-  "accept-language": "zh-CN,zh-Hans;q=0.9",
-  "referer": "https://h5-bj.ninebot.com/",
-};
+function makeHeaders() {
+  return {
+    "Authorization": AUTH,
+    "Content-Type": "application/json",
+    "device_id": DEVICE_ID,
+    "User-Agent": UA,
+    "platform": "h5",
+    "Origin": "https://h5-bj.ninebot.com",
+    "language": "zh",
+    "aid": "10000004",
+    "accept-encoding": "gzip, deflate, br",
+    "accept-language": "zh-CN,zh-Hans;q=0.9",
+    "accept": "application/json",
+    "sys_language": "zh-CN",
+    "referer": "https://h5-bj.ninebot.com/",
+  };
+}
 
 function today() {
   return new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" })
@@ -53,15 +60,31 @@ async function notify(title, body) {
   } catch (e) { /* ignore */ }
 }
 
-async function request(method, url, body) {
-  const opts = { method, headers: HEADERS };
+async function request(method, url, body, retries = 3) {
+  const headers = makeHeaders();
+  const opts = { method, headers };
   if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(url, opts);
-  const data = await res.json();
-  if (data.code !== 0 && data.code !== undefined && !data.msg?.includes("已签到")) {
-    throw new Error(data.msg || data.message || `code=${data.code}`);
+
+  let lastErr;
+  for (let i = 0; i < retries; i++) {
+    try {
+      console.log(`[请求] ${method} ${url}${i > 0 ? ` (重试 ${i}/${retries - 1})` : ""}`);
+      const res = await fetch(url, opts);
+      const data = await res.json();
+      if (data.code !== 0 && data.code !== undefined && !data.msg?.includes("已签到")) {
+        throw new Error(data.msg || data.message || `code=${data.code}`);
+      }
+      return data;
+    } catch (e) {
+      lastErr = e;
+      if (i < retries - 1) {
+        const delay = Math.min(1000 * Math.pow(2, i), 8000);
+        console.warn(`请求失败: ${e.message}, ${delay}ms 后重试`);
+        await new Promise(r => setTimeout(r, delay));
+      }
+    }
   }
-  return data;
+  throw lastErr;
 }
 
 async function main() {
