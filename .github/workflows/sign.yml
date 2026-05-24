@@ -1,0 +1,23 @@
+name: Ninebot Auto Sign
+
+on:
+  schedule:
+    - cron: "30 0 * * *"   # 每天 00:30 (UTC+8 → 需要对应 UTC 时间调整)
+  workflow_dispatch:        # 手动触发
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run sign
+        env:
+          AUTHORIZATION: ${{ secrets.AUTHORIZATION }}
+          DEVICE_ID: ${{ secrets.DEVICE_ID }}
+          AUTO_OPEN_BOX: ${{ secrets.AUTO_OPEN_BOX }}
+          AUTO_REPAIR: ${{ secrets.AUTO_REPAIR }}
+          NOTIFY_URL: ${{ secrets.NOTIFY_URL }}
+        run: node sign.js
