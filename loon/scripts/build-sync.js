@@ -56,8 +56,7 @@ const blakeIIFE = [
 // 原文件末尾有: ,"object"==typeof module&&module.exports?module.exports=n:...
 // 替换为只保留全局赋值
 const naclIIFE = naclRaw
-  .replace(/,"object"==typeof module[^;]*/g, "")
-  .replace(/;$/g, "");
+  .replace(/,"object"==typeof module[^;]*/g, "");
 
 // 7. 读取同步脚本逻辑（去掉头部注释和环境兼容部分）
 const syncLogic = [
