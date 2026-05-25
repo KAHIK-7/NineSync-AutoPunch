@@ -28,7 +28,8 @@
         "ninebot.logLevel",
         "ninebot.lastCaptureAt",
         "ninebot.lastSignDate",
-        "ninebot.enableRetry"
+        "ninebot.enableRetry",
+        "ninebot.syncWorkerUrl"
       ],
       "settings": [
         {
@@ -143,6 +144,13 @@
           "type": "text",
           "isReadonly": true,
           "desc": "最后一次签到日期"
+        },
+        {
+          "id": "ninebot.syncWorkerUrl",
+          "name": "Worker地址",
+          "val": "",
+          "type": "text",
+          "desc": "Cloudflare Worker URL，用于自动同步凭证到 GitHub Actions"
         }
       ]
     }

@@ -1,0 +1,11 @@
+name = "ninesync-secrets-worker"
+main = "src/index.js"
+compatibility_date = "2025-05-25"
+
+# 以下三个变量需要在 Cloudflare Dashboard 中配置
+# wrangler secret put GITHUB_TOKEN
+# 或在 Worker 部署后通过 Dashboard → Settings → Variables 添加
+[vars]
+# GITHUB_OWNER = ""    # 你的 GitHub 用户名
+# GITHUB_REPO = ""     # 仓库名，如 NineSync-AutoPunch
+# GITHUB_TOKEN = ""    # ⚠️ 敏感信息，请用 wrangler secret put GITHUB_TOKEN 设置

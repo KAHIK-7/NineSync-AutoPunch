@@ -58,6 +58,7 @@ const KEY_LOG_LEVEL = "ninebot.logLevel";
 const KEY_LAST_SIGN_DATE = "ninebot.lastSignDate";
 const KEY_ENABLE_RETRY = "ninebot.enableRetry";
 const KEY_AUTO_REPAIR = "ninebot.autoRepairCard";
+const KEY_SYNC_URL = "ninebot.syncWorkerUrl";
 
 /* 接口地址 */
 const END = {
@@ -193,6 +194,30 @@ if (isCaptureRequest) {
         } else {
             logInfo("抓包信息无变化，跳过写入");
             notify("九号抓包", "凭证无变化", "鉴权信息与已存储的一致，跳过更新");
+        }
+
+        // 同步到 GitHub Actions（兜底：不管凭证是否变化，都尝试同步，防止 Secrets 落后）
+        const syncUrl = readPS(KEY_SYNC_URL) || "";
+        if (syncUrl) {
+            try {
+                logInfo("尝试同步凭证到 GitHub...");
+                await new Promise((resolve) => {
+                    const httpReq = typeof $httpClient !== "undefined" ? $httpClient : $http;
+                    httpReq.post({
+                        url: syncUrl,
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ authorization: auth, deviceId: dev }),
+                        timeout: 15000,
+                    }, (err, resp, data) => {
+                        if (!err && resp?.status >= 200 && resp?.status < 300) {
+                            logInfo("GitHub Secrets 同步成功");
+                        } else {
+                            logWarn("GitHub同步失败:", err || data);
+                        }
+                        resolve();
+                    });
+                });
+            } catch (e) { logWarn("GitHub同步异常:", e); }
         }
     } catch (e) {
         logErr("抓包流程异常：", e);

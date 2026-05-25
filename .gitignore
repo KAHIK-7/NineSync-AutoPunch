@@ -13,7 +13,11 @@ Desktop.ini
 
 # Debug logs
 catlog/
+scripting/
 
 # Reference
 origin/
 scripting/
+
+# Dependencies
+node_modules/
