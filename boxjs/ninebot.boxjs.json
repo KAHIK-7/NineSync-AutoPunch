@@ -29,7 +29,9 @@
         "ninebot.lastCaptureAt",
         "ninebot.lastSignDate",
         "ninebot.enableRetry",
-        "ninebot.syncWorkerUrl"
+        "ninebot.syncGitHubToken",
+        "ninebot.syncGitHubOwner",
+        "ninebot.syncGitHubRepo"
       ],
       "settings": [
         {
@@ -146,11 +148,26 @@
           "desc": "最后一次签到日期"
         },
         {
-          "id": "ninebot.syncWorkerUrl",
-          "name": "Worker地址",
+          "id": "ninebot.syncGitHubToken",
+          "name": "GitHub PAT",
           "val": "",
           "type": "text",
-          "desc": "Cloudflare Worker URL，用于自动同步凭证到 GitHub Actions"
+          "isSecret": true,
+          "desc": "GitHub 个人访问令牌（classic，repo 权限）"
+        },
+        {
+          "id": "ninebot.syncGitHubOwner",
+          "name": "GitHub 用户名",
+          "val": "",
+          "type": "text",
+          "desc": "GitHub 账号 ID，如 KAHIK-7"
+        },
+        {
+          "id": "ninebot.syncGitHubRepo",
+          "name": "GitHub 仓库名",
+          "val": "",
+          "type": "text",
+          "desc": "仓库名，如 NineSync-AutoPunch"
         }
       ]
     }
