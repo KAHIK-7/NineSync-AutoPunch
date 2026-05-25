@@ -2,7 +2,7 @@ name: Ninebot Auto Sign
 
 on:
   schedule:
-    - cron: "35 16 * * *"
+    - cron: "05 16 * * *"
   workflow_dispatch:
 
 jobs:

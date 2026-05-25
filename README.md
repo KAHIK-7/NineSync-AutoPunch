@@ -62,8 +62,6 @@ loon://import?plugin=https://raw.githubusercontent.com/KAHIK-7/NineSync-AutoPunc
 
 凭证（Authorization、DeviceId）自动写入 BoxJS，之后每日 cron 签到脚本从 BoxJS 读取。
 
-若已配置 [凭证自动同步](#凭证自动同步loon--github-actions)，此时也会自动推送到 GitHub Actions Secrets。
-
 ### 4. 配置参数（可选）
 
 Loon → 插件 → 编辑参数，可调整：
@@ -160,112 +158,61 @@ Authorization 有效期有限。过期后：
 
 ## 凭证自动同步（Loon → GitHub Actions）
 
-每次 Loon 抓包时自动将凭证推送到 GitHub Actions Secrets，彻底告别手动更新。
+Token 过期后，只需在 Loon 中手动触发一次同步脚本，即可将 BoxJS 中已抓取的凭证推送到 GitHub Secrets，无需打开电脑。
 
 ### 原理
 
 ```
-Loon 抓包（MITM 拦截九号 API）
-  → 提取 Auth / DeviceId 写入 BoxJS
-  → POST 到 Cloudflare Worker（HTTPS）
-  → Worker 用 libsodium sealed box 加密
-  → Worker 调 GitHub Secrets API 写入
-  → 完成 → Loon 收到通知
+Loon 手动触发 sync-secrets.js
+  → 从 BoxJS 读取 Auth / DeviceId / GitHub PAT
+  → 调 GitHub API 获取仓库 public key
+  → tweetnacl + blakejs 本地 libsodium 加密（纯 JS，内嵌脚本中）
+  → PUT GitHub Secrets API 更新 AUTHORIZATION + DEVICE_ID
+  → 通知推送结果
 ```
 
-GitHub Secrets API 要求用 libsodium `crypto_box_seal` 加密，Loon 的 JavaScriptCore 引擎没有原生 crypto 模块，所以加一层 Cloudflare Worker 代理做加密。Loon 端只需发一个简单的 HTTPS POST，完全不增加复杂度。
-
-### 前置条件
-
-| 材料 | 说明 |
-|------|------|
-| GitHub Personal Access Token | 经典令牌，勾选 `repo` 权限 |
-| Cloudflare 账号 | 免费，Worker 每日请求量在免费额度内 |
-| Node.js + npm | 本地部署 Worker 用（WSL / macOS 均可） |
+脚本自包含 tweetnacl 和 blakejs，无任何外部依赖。整个流程就是脚本直接调 GitHub API，中间不经过任何第三方服务。
 
 ### 第 1 步：创建 GitHub PAT
 
 1. GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
 2. Generate new token (classic)
 3. 权限选 **Only select repositories** → 选择 `NineSync-AutoPunch`
-4. 勾选 `repo` 权限（含读写 Secrets）
+4. 勾选 `repo` 权限
 5. 生成后复制 token（只显示一次）
 
-### 第 2 步：部署 Cloudflare Worker
+### 第 2 步：配置 BoxJS
 
-```bash
-# 1. 安装 Wrangler CLI（一次性）
-npm install -g wrangler
+Safari 打开 BoxJS → 「NineBot-DATA」→「九号签到数据」，填入以下三个字段：
 
-# 2. 登录 Cloudflare（WSL 用户先创建 API Token 再用环境变量）
-#    Dashboard → Profile → API Tokens → Create Token → 编辑 Cloudflare Workers 模板
-#    然后：
-export CLOUDFLARE_API_TOKEN="你的API令牌"
+| 字段 | 值 | 说明 |
+|------|-----|------|
+| GitHub PAT | 第 1 步复制的 token | `ghp_xxxxxxxx` |
+| GitHub 用户名 | 你的 GitHub ID | 如 `KAHIK-7` |
+| GitHub 仓库名 | 仓库名 | 如 `NineSync-AutoPunch` |
 
-# 3. 进入 worker 目录，安装依赖
-cd worker
-npm install
-
-# 4. 配置 Worker 环境变量（敏感信息用 secret 存储）
-npx wrangler secret put GITHUB_TOKEN     # GitHub PAT（第 1 步创建的）
-npx wrangler secret put GITHUB_OWNER     # GitHub 用户名（如 KAHIK-7）
-npx wrangler secret put GITHUB_REPO      # 仓库名（如 NineSync-AutoPunch）
-
-# 5. 部署
-npx wrangler deploy
-```
-
-部署成功后输出 Worker URL，形如：
-
-```
-https://ninesync-secrets-worker.xxxx.workers.dev
-```
-
-记下这个 URL，下一步要用。
-
-### 第 3 步：配置 BoxJS
-
-1. Safari 打开 BoxJS → 「NineBot-DATA」→「九号签到数据」
-2. 找到 **Worker地址** 字段，填入上一步的 Worker URL
-3. 保存
-
-> 如果没看到 Worker地址 字段，说明 BoxJS 订阅的配置是旧版本。重新订阅一次：
+> 如果没看到这三个字段，说明 BoxJS 订阅的是旧版配置。重新订阅一次：
 > ```
 > http://boxjs.com/#/sub/add/https://raw.githubusercontent.com/KAHIK-7/NineSync-AutoPunch/main/boxjs/ninebot.boxjs.json
 > ```
 
-### 第 4 步：添加手动同步脚本（可选）
-
-自动同步已内置在抓包流程中。如需一个可手动触发的备用按钮：
+### 第 3 步：添加同步脚本
 
 1. Loon → 配置 → 脚本 → 右上角 ⊕ → 本地脚本
 2. 脚本名称填 `九号-同步GitHub`，脚本类型选 `cron`
 3. Cron 时间随意（如 `0 0 1 1 0`，不依赖 cron 自动执行）
 4. 内容复制 `loon/scripts/sync-secrets.js` 的全部代码
-5. 保存后在脚本列表点击即可手动执行
+5. 保存
 
-### 测试
+### 使用
 
-1. 确保 Loon VPN 开启
-2. 打开九号出行 App → 进入签到页面
-3. 查看 Loon 日志：应显示 "GitHub Secrets 同步成功"
-4. 去 GitHub 仓库 → Settings → Secrets → 检查 `AUTHORIZATION` 和 `DEVICE_ID` 的更新时间
+Token 过期后：
 
-如果 Loon 日志显示 Worker 调用成功但 GitHub Secrets 没变化，检查：
-- GitHub PAT 是否有 `repo` 权限
-- Worker 的三个 secret（GITHUB_TOKEN / OWNER / REPO）是否正确
-- 在 Cloudflare Dashboard → Workers & Pages → `ninesync-secrets-worker` → Logs 查看 Worker 端错误
+1. 打开九号 App 签到页 → 抓包获取新凭证（自动写入 BoxJS）
+2. Loon → 脚本列表 → 点击 `九号-同步GitHub` 执行
+3. 收到「GitHub同步 成功」通知即完成
 
-### 管理 Worker
-
-| 操作 | 方式 |
-|------|------|
-| 查看实时日志 | `npx wrangler tail`（在 worker 目录下） |
-| 更新代码 | `npx wrangler deploy` |
-| 更换 PAT | `npx wrangler secret put GITHUB_TOKEN` 或在 Dashboard 网页修改 |
-| 删除 Worker | Cloudflare Dashboard → Workers & Pages → 找到 Worker → Settings → Delete |
-
-> 删除本地 `worker/` 目录不会影响云端。云端 Worker 需在 Cloudflare Dashboard 单独删除。
+之后 GitHub Actions 便可用新凭证继续签到。
 
 ---
 
@@ -277,14 +224,13 @@ https://ninesync-secrets-worker.xxxx.workers.dev
 ├── loon/                          # Loon 插件
 │   ├── ninebot-auto-sign.plugin   # 插件定义（MITM + Cron + Script）
 │   └── scripts/
-│       ├── ninebot-sign.js        # 签到逻辑 + 抓包自动同步（兼容 Surge/QX/Loon）
-│       ├── sync-secrets.js        # 手动凭证同步脚本（备用）
+│       ├── ninebot-sign.js        # 签到逻辑（兼容 Surge/QX/Loon）
+│       ├── sync-secrets.js        # 凭证同步脚本（自包含，内嵌 crypto）
 │       └── boxjs-cors.js          # BoxJS 跨域兼容
-├── worker/                        # Cloudflare Worker
+├── worker/                        # Cloudflare Worker（已弃用，仅供参考）
 │   ├── package.json
 │   ├── wrangler.toml
-│   └── src/
-│       └── index.js               # 接收 Loon POST → 加密 → 调 GitHub Secrets API
+│   └── src/index.js
 └── boxjs/
     └── ninebot.boxjs.json         # BoxJS 数据模型
 ```
@@ -295,9 +241,9 @@ https://ninesync-secrets-worker.xxxx.workers.dev
 
 安全。GitHub Secrets 加密存储，只在 Actions 运行时解密注入。公开仓库也不会泄露。运行日志中 Secrets 值会被自动打码。
 
-**Worker 传输凭证安全吗？**
+**同步脚本传输凭证安全吗？**
 
-安全。Loon → Worker 走 HTTPS 加密传输，Worker → GitHub API 也走 HTTPS。Worker 本身不存储凭证，收到即加密转发，处理完即丢弃。
+安全。脚本直接调 GitHub API（HTTPS），不经过任何第三方服务。GitHub PAT 加密存储在 BoxJS 中，仅在手机本地使用。
 
 **怎么知道 Token 过期了？**
 
@@ -307,10 +253,6 @@ https://ninesync-secrets-worker.xxxx.workers.dev
 
 免费。公开仓库无限使用，私有仓库每月 2000 分钟。每天跑一次消耗不到 1 分钟。
 
-**Cloudflare Worker 免费吗？**
-
-免费。免费额度每天 10 万次请求。每次抓包才调用 1 次，一天个位数，碰不到零头。
-
 **Loon 抓包后必须手动复制到 Secrets 吗？**
 
-不需要。配置好凭证自动同步后，每次抓包自动推送。旧 Token 过期后，打开一次九号 App 签到页即可自动刷新 GitHub Secrets。
+不需要。配置好同步脚本后，Token 过期 → 打开九号 App 抓包 → Loon 里点一下同步脚本 → 完成。全程在手机上操作，不需要电脑。
